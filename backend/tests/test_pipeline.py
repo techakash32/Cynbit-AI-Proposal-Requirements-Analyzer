@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import Any, TypeVar
 from uuid import uuid4
 
@@ -100,7 +101,7 @@ async def test_pipeline_grounds_evidence_and_persists_enabled_optional_stages_wi
     project, analysis, document = await prepare_analysis(repo, settings)
     fake_ai = FakeAI()
 
-    await AnalysisPipeline(repo, fake_ai).run(analysis["id"], document, [{"page": 1, "text": document}], settings)
+    await AnalysisPipeline(repo, fake_ai).run(analysis["id"], document, [{"page": 1, "text": document}], json.dumps(settings))
 
     saved = repo.analyses[analysis["id"]]
     assert saved["status"] == "completed"

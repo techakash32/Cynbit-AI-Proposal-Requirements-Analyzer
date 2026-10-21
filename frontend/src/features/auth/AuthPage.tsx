@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, EyeOff, LoaderCircle } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { api, ApiError } from '../../lib/api';
+import { api, ApiError, setCsrfToken } from '../../lib/api';
 import { Button } from '../../components/ui/button';
 import { Input, Label } from '../../components/ui/fields';
 import { useToast } from '../../components/ui/toast';
@@ -37,8 +37,10 @@ export default function AuthPage({ mode }: { mode: 'signup' | 'login' }) {
   async function submit(values: SignupValues | LoginValues) {
     try {
       const body = signup ? signupRequestPayload(values as SignupValues) : values as LoginValues;
-      await api<SessionState>(`/auth/${signup ? 'signup' : 'login'}`, { method: 'POST', body: JSON.stringify(body) });
-      await client.invalidateQueries({ queryKey: ['me'] });
+      const session = await api<SessionState>(`/auth/${signup ? 'signup' : 'login'}`, { method: 'POST', body: JSON.stringify(body) });
+      client.clear();
+      setCsrfToken(session.csrf_token ?? null);
+      client.setQueryData(['me'], session);
       navigate('/dashboard', { replace: true });
     } catch (error) {
       if (error instanceof ApiError && error.status === 409) {

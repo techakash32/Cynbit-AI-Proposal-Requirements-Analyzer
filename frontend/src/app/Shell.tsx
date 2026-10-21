@@ -1,7 +1,8 @@
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Activity, BookOpen, ChevronRight, FilePlus2, FolderKanban, LayoutDashboard, LogOut, Menu, Settings, Sparkles, UserRound } from 'lucide-react';
-import { api } from '../lib/api';
+import { api, setCsrfToken } from '../lib/api';
 import type { User } from '../types/api';
 import { useUIStore } from '../stores/ui';
 import { Button } from '../components/ui/button';
@@ -38,12 +39,13 @@ export function Sidebar({ onNavigate, pathname }: { onNavigate?: () => void; pat
 export function Shell({ user, children }: { user: User; children: React.ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const client = useQueryClient();
   const mobileOpen = useUIStore((state) => state.mobileSidebarOpen);
   const setMobileOpen = useUIStore((state) => state.setMobileSidebarOpen);
   const path = location.pathname;
   const crumbs = path.split('/').filter(Boolean).map((segment) => ({ name: segment.replace(/-/g, ' '), href: `/${segment}` }));
   const initials = user.name.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'U';
-  async function logout() { try { await api('/auth/logout', { method: 'POST' }); } finally { navigate('/login', { replace: true }); } }
+  async function logout() { try { await api('/auth/logout', { method: 'POST' }); } finally { setCsrfToken(null); client.clear(); navigate('/login', { replace: true }); } }
   return <div className="min-h-screen bg-paper text-copy">
     <a href="#main-content" className="skip-link">Skip to main content</a>
     <div className="sidebar-frame fixed inset-y-0 left-0 hidden border-r border-line lg:block"><Sidebar pathname={path} /></div>

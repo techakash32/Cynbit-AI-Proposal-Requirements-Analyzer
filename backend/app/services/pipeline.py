@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import Any, Protocol, TypeVar
 
 from pydantic import BaseModel, Field
@@ -25,6 +26,17 @@ from app.services.rules import calculate_complexity, calculate_estimate
 T = TypeVar("T", bound=BaseModel)
 
 
+def _coerce_analysis_settings(settings: Any) -> dict[str, Any]:
+    if isinstance(settings, str):
+        try:
+            settings = json.loads(settings)
+        except json.JSONDecodeError as exc:
+            raise ValueError("Stored analysis settings are not valid JSON.") from exc
+    if not isinstance(settings, dict):
+        raise ValueError("Analysis settings must be a JSON object.")
+    return settings
+
+
 class JSONCompleter(Protocol):
     async def complete_json(self, stage: str, document: str, response_model: type[T], context: str = "") -> T: ...
 
@@ -34,12 +46,13 @@ class AnalysisPipeline:
         self.repo = repo
         self.ai = ai
 
-    async def run(self, analysis_id, document: str, page_blocks: list[dict[str, Any]], settings: dict[str, Any]) -> None:
+    async def run(self, analysis_id, document: str, page_blocks: list[dict[str, Any]], settings: dict[str, Any] | str) -> None:
         analysis = None
         try:
             analysis = await self.repo.get_analysis_by_id(analysis_id) if hasattr(self.repo, "get_analysis_by_id") else None
             if analysis:
                 await self.repo.update_project_status(analysis["project_id"], "analyzing")
+            settings = _coerce_analysis_settings(settings)
             await self.repo.update_analysis(analysis_id, "running", "requirements", progress_percent=10)
             requirement_result = await self.ai.complete_json("requirements", document, _RequirementsOutput)
             grounded_requirements = []

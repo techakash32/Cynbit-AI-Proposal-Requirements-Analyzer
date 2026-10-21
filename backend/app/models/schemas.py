@@ -83,6 +83,7 @@ class UserProfilePatch(APIModel):
 class AnalysisStartResponse(APIModel):
     id: UUID
     status: str
+    ocr_used: bool = False
 
 
 class Requirement(APIModel):

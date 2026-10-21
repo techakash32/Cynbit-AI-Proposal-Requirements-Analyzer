@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
-import { api } from '../../lib/api';
+import { api, setCsrfToken } from '../../lib/api';
 import type { User } from '../../types/api';
 import { Button } from '../../components/ui/button';
 import { Input, Label } from '../../components/ui/fields';
@@ -84,6 +84,7 @@ export default function SettingsHelpPage({ page }: { page: 'settings' | 'help' }
     setSaving(true);
     try {
       await api('/auth/me', { method: 'DELETE' });
+      setCsrfToken(null);
       await client.clear();
       navigate('/signup', { replace: true });
     } catch (error) {
@@ -141,14 +142,14 @@ function HelpPage() {
       <Card className="p-4">
         <h2 className="font-semibold">Setup</h2>
         <p className="mt-2 text-sm text-muted-copy">Configure the Neon connection string and Groq API key in the protected runtime environment. Apply <code>database/schema.sql</code>, then start the FastAPI API and Vite frontend as described in the README.</p>
-        <p className="mt-2 text-sm text-muted-copy">PDF, DOCX, and TXT ingestion extracts available text for analysis. Source documents are treated as untrusted input; the output remains a draft for human review.</p>
+        <p className="mt-2 text-sm text-muted-copy">PyMuPDF extracts PDF text and RapidOCR locally processes low-text PDF pages; DOCX and TXT text is extracted directly. OCR can misread scans, so review extracted claims against the source. Documents are treated as untrusted input and outputs remain drafts for human review.</p>
       </Card>
       <Card className="p-4">
         <h2 className="font-semibold">Troubleshooting</h2>
         <ul className="mt-2 list-inside list-disc space-y-2 text-sm text-muted-copy">
           <li>Database unavailable: confirm <code>DATABASE_URL</code>, TLS settings, network access, and schema version.</li>
           <li>Analysis cannot start: confirm the Groq API key and model availability; provider failures remain visible rather than turning into invented results.</li>
-          <li>Files with no extractable text may require external OCR; this prototype does not provide OCR.</li>
+          <li>For a Groq error that says it tried only one configured key, check every <code>GROQ_KEY_1=value</code>, <code>GROQ_KEY_2=value</code> line and restart the backend; the README has a count-only diagnostic.</li>
           <li>For local HTTP development keep <code>PUBLIC_HTTPS=false</code>; set it to true only for public HTTPS Preview or hosted deployments.</li>
         </ul>
         <a className="mt-3 inline-block text-sm underline underline-offset-4" href="/README.md" target="_blank" rel="noreferrer">Open README</a>
@@ -156,7 +157,7 @@ function HelpPage() {
       <Card className="p-4">
         <h2 className="font-semibold">Limitations</h2>
         <Accordion type="multiple" className="mt-2">
-          <AccordionItem value="ocr"><AccordionTrigger>OCR unavailable</AccordionTrigger><AccordionContent>Scanned pages and embedded images are not OCR-processed. Analysis can only use text that the document extractor can read.</AccordionContent></AccordionItem>
+          <AccordionItem value="ocr"><AccordionTrigger>OCR can misread scanned PDFs</AccordionTrigger><AccordionContent>PyMuPDF extracts selectable PDF text. The backend uses local RapidOCR on PDF pages with fewer than 40 non-whitespace native text characters, up to 30 pages and 20 megapixels per page; larger OCR workloads are rejected rather than silently truncated. DOCX images and handwriting are not separately OCR-processed. Recognition can miss or misread low-quality scans, so verify every important claim and citation against the original document.</AccordionContent></AccordionItem>
           <AccordionItem value="evidence"><AccordionTrigger>Evidence may be null</AccordionTrigger><AccordionContent>When no verbatim supporting passage and source page can be established, evidence is null and the UI states that no supporting evidence was found. The system must not invent evidence.</AccordionContent></AccordionItem>
           <AccordionItem value="estimate"><AccordionTrigger>Estimate assumptions and persistence</AccordionTrigger><AccordionContent>Effort and cost are preliminary ranges, not a quote. Costs use person-hours × hourly rate × contingency; schedule ranges use sequential person-hours ÷ (team size × eight working hours per day). Edited estimate assumptions recalculate in the current page but are not saved to the analysis; human review is required.</AccordionContent></AccordionItem>
           <AccordionItem value="jobs"><AccordionTrigger>Analysis job recovery</AccordionTrigger><AccordionContent>Analysis status is persisted and can be fetched after navigation or reload while the API process is running. Work itself runs in that API process; a server restart cancels an in-flight job, and automatic restart recovery or retry is not implemented.</AccordionContent></AccordionItem>

@@ -35,6 +35,6 @@ flowchart LR
 
 ## Boundaries
 
-The browser stores transient UI state only; session identity is server-side and sent by an HTTP-only cookie. The external Groq provider receives the source text for requested analysis stages. Neon stores extracted document text and analysis outputs. Users should therefore treat Neon as containing customer-sensitive material and configure access/retention accordingly. No original binary object store or OCR service is part of this implementation.
+The browser stores transient UI state only; session identity is server-side and sent by an HTTP-only cookie. The external Groq provider receives the source text for requested analysis stages. Neon stores extracted document text and analysis outputs. Users should therefore treat Neon as containing customer-sensitive material and configure access/retention accordingly. PyMuPDF extracts selectable text and local RapidOCR with ONNX Runtime processes low-text PDF pages (maximum 30 pages and 20 megapixels per rendered page); OCR runs in a worker thread, with inference serialized around the cached CPU engine. No external OCR provider or original binary object store is used.
 
 Vercel and Render are documented deployment targets, not active deployments. Their separate-site origin relationship can interact with browser third-party-cookie restrictions. Analysis background work is process-local; persisted status does not make an in-flight task durable across restarts.

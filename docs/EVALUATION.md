@@ -16,16 +16,17 @@ Backend tests use HTTPX and mocked Groq output for signup/duplicate/wrong-passwo
 
 Frontend Vitest tests cover API-response normalization, evidence/page preservation, disabled-estimate handling, and editable cost/schedule recalculation. The complexity tests use representative synthetic feature aggregates (10 requirements/2 high risks/1 integration; 15/4/5; 13/2 medium/3) and expect deterministic scores `32`, `66`, and `40`. These values validate the rule function, not Groq model accuracy on the full sample briefs.
 
-## Recorded run (2026-10-21)
+## Recorded run (2026-10-22)
 
 | Check | Result |
 | --- | --- |
 | `pnpm typecheck` | Passed; frontend TypeScript and repository Pyright, 0 errors, 0 warnings, 0 information. |
-| `pnpm test:all` | Passed; Vitest 5 tests and Pytest 15 tests. |
-| `pnpm build` | Passed. Vite retained a chunk-size advisory: `index` 744.34 kB, deferred Mermaid/ELK chunk 1,462.93 kB, and Analytics page 342.18 kB (uncompressed). The diagram is deferred until needed, but the heavy optional vendor chunks remain. |
-| Preview HTTP checks | `GET /`, `/health`, `/manus-routes.json`, `/help`, and `/README.md` returned 200. The static route manifest was valid JSON with 14 routes. API health reported `database_configured: true` and `groq_configured: true`; this is configuration status, not a real-provider quality evaluation. No account or user-data mutation was performed for these checks. |
-| Public UI review | Landing, signup, and Help pages were opened in Preview. Clean landing/signup captures are included in `docs/screenshots/`; no signup data was entered or submitted. |
+| `pnpm test:all` | Passed; Vitest 10 tests and Pytest 27 tests, including OCR fallback, page attribution, and OCR resource-limit tests. |
+| `pnpm build` | Passed. Vite retained a chunk-size advisory: `index` 746.08 kB, deferred Mermaid/ELK chunk 1,462.93 kB, and Analytics page 342.19 kB (uncompressed). The diagram is deferred until needed, but the heavy optional vendor chunks remain. |
+| RapidOCR smoke test | Passed on a generated image-only PDF; local RapidOCR recognized “Customer requires audit logging.” This is an integration smoke test, not an OCR accuracy benchmark. |
+| Preview HTTP checks (2026-10-21) | `GET /`, `/health`, `/manus-routes.json`, `/help`, and `/README.md` returned 200. The static route manifest was valid JSON with 14 routes. API health reported `database_configured: true` and `groq_configured: true`; this is configuration status, not a real-provider quality evaluation. No account or user-data mutation was performed for these checks. |
+| Public UI review (2026-10-21) | Landing, signup, and Help pages were opened in Preview. Clean landing/signup captures are included in `docs/screenshots/`; no signup data was entered or submitted. |
 
 ## Results and limitations
 
-No blinded human-labeled dataset, baseline, inter-rater review, latency study, cost study, or real-world task-time measurement is included. Therefore no extraction precision/recall, risk accuracy, proposal quality, productivity improvement, or provider reliability is claimed. Tests validate contracts and deterministic logic only; Groq responses were mocked, and real model output quality was not measured. OCR, durable background-job recovery, and external deployment are not evaluated here. A complete signed-in, real-database user journey was not run to avoid creating persistent test accounts/data. A formal WCAG 2.2 AA keyboard and assistive-technology audit remains open; accessible primitives, semantic markup and focus styling are implemented, but conformance is not claimed. The bundle-size advisory above is retained rather than hidden by changing the warning threshold.
+No blinded human-labeled dataset, baseline, inter-rater review, latency study, cost study, or real-world task-time measurement is included. Therefore no extraction precision/recall, risk accuracy, proposal quality, productivity improvement, or provider reliability is claimed. Tests validate contracts and deterministic logic only; Groq responses were mocked, and real model output quality was not measured. OCR integration is covered by mocked tests and a generated-PDF smoke test, but recognition quality on real scans, durable background-job recovery, and external deployment are not evaluated here. A complete signed-in, real-database user journey was not run to avoid creating persistent test accounts/data. A formal WCAG 2.2 AA keyboard and assistive-technology audit remains open; accessible primitives, semantic markup and focus styling are implemented, but conformance is not claimed. The bundle-size advisory above is retained rather than hidden by changing the warning threshold.

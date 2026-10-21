@@ -13,7 +13,7 @@ from starlette.datastructures import UploadFile as StarletteUploadFile
 from app.ai.groq import GroqClient
 from app.auth.security import (allow_attempt, clear_session_cookies, current_session, hash_password, new_token, require_csrf, secure_cookie, session_expiry, set_session_cookies, token_hash, verify_password)
 from app.config import settings
-from app.documents.extract import extract_document
+from app.documents.extract import DocumentExtractionError, extract_document
 from app.models.schemas import (AnalysisResponse, AnalysisStartResponse, AnalysisStatus, AnalyzeRequest, AnalyzeSettings, LoginRequest, PasswordChangeRequest, ProjectCreate, ProjectPatch, ProjectResponse, ProposalPatch, ProposalResponse, RegenerateSectionRequest, SignupRequest, UnifiedAnalysis, UserProfilePatch, UserResponse)
 from app.services.export import docx_bytes, markdown, pdf_bytes
 from app.services.pipeline import AnalysisPipeline
@@ -45,7 +45,7 @@ def unavailable(exc: Exception) -> HTTPException:
 @router.get("/health")
 async def health(request: Request):
     configured = bool(settings.database_url) or request.app.state.repo.__class__.__name__ == "MemoryRepository"
-    return {"status": "ok", "database_configured": configured, "groq_configured": bool(settings.groq_api_key)}
+    return {"status": "ok", "database_configured": configured, "groq_configured": bool(settings.groq_keys)}
 
 
 @router.post("/api/auth/signup", response_model=UserResponse, status_code=201)
@@ -178,9 +178,9 @@ async def analyze_project(project_id: UUID, request: Request):
         document = await repo(request).create_document(project_id, filename, content_type, extracted.text, extracted.page_blocks)
         analysis = await repo(request).create_analysis(project_id, document["id"], analysis_settings)
         await repo(request).update_project_status(project_id, "analyzing")
-        task = asyncio.create_task(AnalysisPipeline(repo(request), GroqClient(settings)).run(analysis["id"], extracted.text, extracted.page_blocks, analysis["settings"]))
+        task = asyncio.create_task(AnalysisPipeline(repo(request), GroqClient(settings)).run(analysis["id"], extracted.text, extracted.page_blocks, analysis_settings))
         request.app.state.tasks.add(task); task.add_done_callback(request.app.state.tasks.discard)
-        return {"id": analysis["id"], "status": analysis["status"]}
+        return {"id": analysis["id"], "status": analysis["status"], "ocr_used": extracted.ocr_used}
     except ValueError as exc: raise HTTPException(422, str(exc))
     except HTTPException: raise
     except Exception as exc: raise unavailable(exc)
@@ -206,7 +206,9 @@ async def _parse_analysis_request(request: Request):
         if len(content) > MAX_UPLOAD_BYTES:
             raise HTTPException(413, "Uploaded document is too large")
         try:
-            extracted = extract_document(content, filename, content_type)
+            extracted = await asyncio.to_thread(extract_document, content, filename, content_type)
+        except DocumentExtractionError as exc:
+            raise HTTPException(422, str(exc)) from exc
         except Exception as exc:
             raise HTTPException(422, "Could not extract readable text from the uploaded document") from exc
         if not extracted.text.strip():
@@ -229,7 +231,9 @@ async def _parse_analysis_request(request: Request):
     if len(payload.source_text.encode("utf-8")) > MAX_TEXT_BYTES:
         raise HTTPException(413, "Pasted text is too large")
     try:
-        extracted = extract_document(payload.source_text.encode("utf-8"), payload.filename, payload.content_type)
+        extracted = await asyncio.to_thread(extract_document, payload.source_text.encode("utf-8"), payload.filename, payload.content_type)
+    except DocumentExtractionError as exc:
+        raise HTTPException(422, str(exc)) from exc
     except Exception as exc:
         raise HTTPException(422, "Could not extract readable text from the pasted document") from exc
     return extracted, payload.filename, payload.content_type, payload.model_dump(exclude={"source_text", "filename", "content_type"})
