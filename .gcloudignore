@@ -1,0 +1,20 @@
+# Keep the managed source archive limited to committed runtime/build inputs.
+.git/
+node_modules/
+**/node_modules/
+frontend/dist/
+**/dist/
+.venv/
+**/.venv/
+.pytest_cache/
+**/.pytest_cache/
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.tsbuildinfo
+.env
+.env.*
+**/.env
+**/.env.*
+!.env.example
+!**/.env.example

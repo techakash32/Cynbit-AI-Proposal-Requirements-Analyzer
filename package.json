@@ -1,0 +1,22 @@
+{
+  "name": "cynbit-ai-proposal-analyzer",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@11.25.0",
+  "scripts": {
+    "dev": "pnpm --filter @cynbit/frontend dev",
+    "dev:full": "concurrently -k -n api,web -c black,white \"pnpm api\" \"pnpm dev\"",
+    "api": ".venv/bin/uvicorn app.main:app --app-dir backend --env-file .env --host 0.0.0.0 --port 8765",
+    "build": "pnpm --filter @cynbit/frontend build",
+    "typecheck:frontend": "pnpm --filter @cynbit/frontend typecheck",
+    "typecheck:python": "pyright --project pyrightconfig.json",
+    "typecheck": "pnpm typecheck:frontend && pnpm typecheck:python",
+    "test": "pnpm --filter @cynbit/frontend test",
+    "test:backend": ".venv/bin/python -m pytest backend/tests -q",
+    "test:all": "pnpm test && pnpm test:backend"
+  },
+  "devDependencies": {
+    "concurrently": "10.0.6",
+    "pyright": "1.1.408"
+  }
+}

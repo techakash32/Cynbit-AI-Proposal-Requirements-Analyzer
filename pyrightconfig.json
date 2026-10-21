@@ -1,0 +1,10 @@
+{
+  "include": ["backend/app", "backend/tests"],
+  "extraPaths": ["backend"],
+  "venvPath": ".",
+  "venv": ".venv",
+  "pythonVersion": "3.12",
+  "typeCheckingMode": "basic",
+  "reportMissingImports": "error",
+  "reportMissingTypeStubs": "none"
+}

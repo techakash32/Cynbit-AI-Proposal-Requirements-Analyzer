@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: cynbit-ai-proposal-analyzer-api
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: PUBLIC_HTTPS
+        value: "true"
