@@ -1,3 +1,4 @@
+
 services:
   - type: web
     name: cynbit-ai-proposal-analyzer-api
@@ -8,12 +9,46 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
+
     envVars:
       - key: DATABASE_URL
         sync: false
+
       - key: GROQ_API_KEY
         sync: false
+
+      - key: GROQ_KEY_1
+        sync: false
+      - key: GROQ_KEY_2
+        sync: false
+      - key: GROQ_KEY_3
+        sync: false
+      - key: GROQ_KEY_4
+        sync: false
+      - key: GROQ_KEY_5
+        sync: false
+      - key: GROQ_KEY_6
+        sync: false
+      - key: GROQ_KEY_7
+        sync: false
+      - key: GROQ_KEY_8
+        sync: false
+      - key: GROQ_KEY_9
+        sync: false
+      - key: GROQ_KEY_10
+        sync: false
+
+      - key: GROQ_BASE_URL
+        value: https://api.groq.com/openai/v1
+
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-120b
+
       - key: CORS_ORIGINS
         sync: false
+
       - key: PUBLIC_HTTPS
         value: "true"
+
+      - key: SESSION_TTL_HOURS
+        value: "24"
